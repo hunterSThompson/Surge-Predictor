@@ -5,7 +5,9 @@ import json
 import MySQLdb
 
 # Initiate cursor
-cnx = MySQLdb.connect(host='', port=3306, passwd='gamera@1234', user='gsmp', db='gsmp')
+#cnx = MySQLdb.connect(host='', port=3306, passwd='bets123', user='bets', db='bets')
+cnx = MySQLdb.connect(host='', port=3306, passwd='gamera@1234',
+                                        user='bets', db='bets')
 cursor = cnx.cursor()
 
 start_long, start_lat = '42.340152', '-71.089389'
@@ -33,19 +35,31 @@ print taxi
 print uberX
 print uberXL
 
+data = (black, uberX, uberXL, suv, taxi, start_long, start_lat)
+
 insert = '''
 INSERT INTO `bets`.`Surge`
 (
+`Time`,
+`UberBlack`,
 `UberX`,
 `UberXL`,
 `UberSUV`,
-`UberTaxi`)
+`UberTaxi`,
+`Longitude`,
+`Latitude`
+)
 VALUES
 (
+NOW(),
+%s,
+%s,
+%s,
 %s,
 %s,
 %s,
 %s);
 '''
 
-#print r.text
+cursor.execute(insert, data)
+cnx.commit()
