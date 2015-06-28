@@ -6,6 +6,12 @@ import MySQLdb
 import sklearn as sk
 import numpy
 import pygal
+import sys
+from datetime import date, timedelta
+
+day = 1
+if len(sys.argv) > 1:
+	day = int(sys.argv[1])
 
 qryStr = 'SELECT DATE_SUB(Time, INTERVAL 4 HOUR), UberX FROM Surge WHERE DATE(DATE_SUB(Time, INTERVAL 4 HOUR)) = DATE(NOW()) AND location = \'Home\''
 
@@ -29,45 +35,44 @@ def createBins(lst, n):
 	for i in range(0, len(lst), n):
 		chunk = lst[i:i+n]
 		bins.append(calcStats(chunk))
-		#bins.append(lst[i:i+n])
 	return bins
 
-def createChart(x, y):
-	#import pdb; pdb.set_trace()
+def createChart(d, t, x, y):
 	chart = pygal.Line()
-	chart.title = 'Some shit'
+
+	d2 = date.today() - timedelta(days=d)
+	title = t + '_' + str(d2)
+	chart.title = title
+
 	chart.x_labels = x
-	chart.add('Faneuil', y)
+	chart.add(title, y)
 	chart.render_in_browser()
-	chart.render_to_file('Faneuil.html')
+	chart.render_to_file(title + '.html')
 
-try:
-	cnx = MySQLdb.connect(host='54.88.34.236', port=3306, passwd='gamera@1234', user='bets', db='bets')
-	cursor = cnx.cursor()
-	cursor.execute(q3)
-	f = open('output2.csv', 'w')
-	accum = ''
-	surges = []
-	times = []
+# Read in what locations to log surge for from locations.txt
+locations = [ ]
+for line in open('locations.txt', 'r'):
+        locations.append(tuple(line.split(',')))
+print 'Locations:\n' + str(locations)
 
-	for time, x, black in cursor.fetchall():
-		#dset.append((time, black))
-		surges.append(black)
-		times.append(str(mins))
-
-		mins = (time.hour * 60) + time.minute
-		vals = (mins, x, black)
-		vals2 = (str(time), x, black)
-		values = ','.join(map(str, vals))
-		values2 = ','.join(map(str, vals2))
-		accum += (values + '\n')
-	#bins = createBins(dset, 15)
-	#import pdb; pdb.set_trace()
-	createChart(times, surges)
-	f.write(accum)
-
-except Exception, e:
-	print e
+for loc, lat, lon in locations:
+	try:
+		cnx = MySQLdb.connect(host='54.88.34.236', port=3306, passwd='gamera@1234', user='bets', db='bets')
+		cursor = cnx.cursor()
+		qstr = q4 % ((day*24)+4, loc)
+		cursor.execute(qstr)
+		surges,	times, dset = [], [], []
+	
+		for time, x, black in cursor.fetchall():
+			dset.append((time, black))
+			mins = (time.hour * 60) + time.minute
+			surges.append(black)
+			times.append(str(mins))
+	
+		#bins = createBins(dset, 15)
+		createChart(day, loc, times, surges)
+	except Exception, e:
+		print e
 #except Exception as e:
     #exc_type, exc_obj, exc_tb = sys.exc_info()
     #fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
