@@ -7,12 +7,14 @@ import re
 from datetime import datetime
 import time
 
+# Parse user passed date to predict
 if len(sys.argv) < 2:
 	sys.exit("No target date/time supplied!")
 target_date = time.strptime(sys.argv[1], "%Y-%m-%d %H:%M:%S")
 
 loc = len(sys.argv) > 2 # any 3rd arg means location is in cambridge
 
+# Grab all files with a .bin extension in the BinData/ directory
 bins = [file for file in os.listdir('BinData') if file.endswith('.bin')]
 
 # Make decision on 'trend area' (Boston vs Cambridge in our case)
